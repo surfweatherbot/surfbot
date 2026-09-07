@@ -1,0 +1,43 @@
+name: Run Surf Scraper
+
+on:
+  schedule:
+    # Kjører automatisk hver 6. time (kl. 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  # Gjør at du også kan starte kjøringen manuelt fra GitHub sine nettsider
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    # Gir rettighet til at GitHub-bot'en kan lagre den oppdaterte JSON-filen
+    permissions:
+      contents: write
+
+    steps:
+      - name: Sjekk ut koden
+        uses: actions/checkout@v4
+
+      - name: Sett opp Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Installer avhengigheter
+        run: |
+          python -m pip install --upgrade pip
+          pip install beautifulsoup4 playwright
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Kjør Python-skriptet
+        run: python main.py
+
+      - name: Lagre og push oppdatert JSON-fil
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add surf_esp32.json
+          git commit -m "Auto-oppdatert surf_esp32.json [skip ci]" || exit 0
+          git push
